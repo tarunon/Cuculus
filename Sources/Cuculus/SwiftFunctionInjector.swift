@@ -22,7 +22,12 @@ public class SwiftFunctionInjector<T> {
     }
 
     static func isFunctionType<T>(type: T.Type) -> Bool {
-        return "\(type)".contains("->")
+        // Check metadata kind value which is located at the head of metadata.
+        // Function type kind is defined as 2
+        // Reference: https://github.com/apple/swift/blob/master/include/swift/ABI/MetadataKind.def
+        let typeKind = unsafeBitCast(type, to: UnsafePointer<UInt8>.self)
+        let funcKind = 2
+        return typeKind.pointee == funcKind
     }
 
     /// Change origin method behavior as target method.
