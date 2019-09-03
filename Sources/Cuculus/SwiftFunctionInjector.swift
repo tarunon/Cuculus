@@ -22,7 +22,9 @@ public class SwiftFunctionInjector<T> {
     }
 
     static func isFunctionType<T>(type: T.Type) -> Bool {
-        return "\(type)".contains("->")
+        let typeKind = unsafeBitCast(type, to: UnsafePointer<UInt8>.self)
+        let funcKind = 2
+        return typeKind.pointee == funcKind
     }
 
     /// Change origin method behavior as target method.
