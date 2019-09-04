@@ -18,4 +18,26 @@ final class SwiftFunctionInjectorTests: XCTestCase {
         shouldNotBeFuncType(Int.self)
         shouldNotBeFuncType(Array<() -> Void>.self)
     }
+    
+    func testSwiftFunctionHook() {
+        struct Cat {
+            func bark() -> String {
+                return "にゃーん"
+            }
+            
+            func myBark() -> String {
+                return "わん"
+            }
+        }
+        
+        let cat = Cat()
+        let targetInstructionPtr = unsafeBitCast(cat.bark, to: SwiftFuncWrapper.self)
+            .instructionPtr()
+        let destinationInstructionPtr = unsafeBitCast(cat.myBark, to: SwiftFuncWrapper.self)
+            .instructionPtr()
+        let injector = try! CFunctionInjector(targetInstructionPtr)
+        injector.inject(destinationInstructionPtr)
+        
+        XCTAssertEqual(cat.bark(), "わん")
+    }
 }

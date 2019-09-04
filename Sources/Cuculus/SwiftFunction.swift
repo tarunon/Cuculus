@@ -1,9 +1,18 @@
 
-// Ref: https://academy.realm.io/jp/posts/sash-zats-swift-swizzling/
 struct SwiftFuncWrapper {
     var trampolinePtr: UnsafeMutablePointer<UInt64>
     var functionObject: UnsafeMutablePointer<SwiftFuncObject>
+}
 
+struct SwiftFuncObject {
+    var originalTypePtr: UnsafeMutablePointer<UInt64>
+    var unknown: UnsafeMutablePointer<UInt64>
+    var address: UInt64
+    var selfPtr: UnsafeMutablePointer<UInt64>
+}
+
+
+extension SwiftFuncWrapper {
     func instructionPtr() -> UnsafeMutableRawPointer {
         return valueTypeMethodPtr() ?? topLevelFunctionPtr()
     }
@@ -27,12 +36,4 @@ struct SwiftFuncWrapper {
     }
     
     // TODO: Will add other way to indetify instruction pointer, such as class/protocol.
-}
-
-// Ref: https://academy.realm.io/jp/posts/sash-zats-swift-swizzling/
-struct SwiftFuncObject {
-    var originalTypePtr: UnsafeMutablePointer<UInt64>
-    var unknown: UnsafeMutablePointer<UInt64>
-    var address: UInt64
-    var selfPtr: UnsafeMutablePointer<UInt64>
 }
