@@ -22,16 +22,16 @@ class CFunctionInjector {
     /// This method remove original c functions memory protection.
     /// Ref: https://github.com/thomasfinch/CRuntimeFunctionHooker/blob/master/inject.c
     ///
-    /// - Parameter symbol: c function name
+    /// - Parameter target: The target functions instruction pointer.
     /// - Throws: Error that fail CFunctionInjector initialize
-    init(_ origin: UnsafeMutableRawPointer) throws {
+    init(_ target: UnsafeMutableRawPointer) throws {
         // make the memory containing the original function writable
         let pageSize = sysconf(_SC_PAGESIZE)
         if pageSize == -1 {
             throw Error(message: "failed to read memory page size: errno=\(errno)")
         }
 
-        let start = Int(bitPattern: origin)
+        let start = Int(bitPattern: target)
         let end = start + 2
         let pageStart = start & -pageSize
         let status = mprotect(UnsafeMutableRawPointer(bitPattern: pageStart),
@@ -40,9 +40,9 @@ class CFunctionInjector {
         if status == -1 {
             throw Error(message: "failed to change memory protection: errno=\(errno)")
         }
-        self.originalFunctionPointer0 = origin.assumingMemoryBound(to: Int64.self)
+        self.originalFunctionPointer0 = target.assumingMemoryBound(to: Int64.self)
         self.escapedInstructionBytes0 = originalFunctionPointer0.pointee
-        self.originalFunctionPointer8 = UnsafeMutablePointer(bitPattern: Int(bitPattern: origin) + 8)!
+        self.originalFunctionPointer8 = UnsafeMutablePointer(bitPattern: Int(bitPattern: target) + 8)!
         self.escapedInstructionBytes8 = originalFunctionPointer8.pointee
     }
 
@@ -54,18 +54,18 @@ class CFunctionInjector {
     /// Ref: https://github.com/thomasfinch/CRuntimeFunctionHooker/blob/master/inject.c
     ///
     /// - Parameters:
-    ///   - target: c function pointer.
-    func inject(_ target: UnsafeRawPointer) {
+    ///   - target: The destination functions instruction pointer.
+    func inject(_ destination: UnsafeRawPointer) {
         assert(Thread.isMainThread)
 
         // Set the first instruction of the original function to be a jump to the replacement function.
 
-        let targetAddress = Int64(Int(bitPattern: target))
+        let destinationAddress = Int64(Int(bitPattern: destination))
 
         // 1. mov rax %target
-        originalFunctionPointer0.pointee = 0xb848 | targetAddress << 16
+        originalFunctionPointer0.pointee = 0xb848 | destinationAddress << 16
         // 2. jmp rax
-        originalFunctionPointer8.pointee = 0xe0ff << 16 | targetAddress >> 48
+        originalFunctionPointer8.pointee = 0xe0ff << 16 | destinationAddress >> 48
     }
 
     /// Reset function injection.

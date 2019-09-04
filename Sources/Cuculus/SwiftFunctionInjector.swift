@@ -13,12 +13,12 @@ public class SwiftFunctionInjector<T> {
     var internalInjector: CFunctionInjector
 
     /// Create FunctionInjector for change origin method behavior.
-    /// - Parameter origin: The origin method. Support struct/enum or top level function.
-    public init(_ origin: T) throws {
+    /// - Parameter target: The target method. Support struct/enum or top level function.
+    public init(_ target: T) throws {
         guard SwiftFunctionInjector.isFunctionType(type: T.self) else {
             throw CFunctionInjector.Error(message: "Argument is not function. \(T.self)")
         }
-        internalInjector = try CFunctionInjector(unsafeBitCast(origin, to: SwiftFuncWrapper.self).instructionPtr())
+        internalInjector = try CFunctionInjector(unsafeBitCast(target, to: SwiftFuncWrapper.self).instructionPtr())
     }
 
     static func isFunctionType<T>(type: T.Type) -> Bool {
@@ -30,9 +30,14 @@ public class SwiftFunctionInjector<T> {
         return typeKind.pointee == funcKind
     }
 
-    /// Change origin method behavior as target method.
-    /// - Parameter target: The target method. Should be same type as origin.
-    public func inject(_ target: T) {
-        internalInjector.inject(unsafeBitCast(target, to: SwiftFuncWrapper.self).instructionPtr())
+    /// Change target method behavior as destination method.
+    /// - Parameter destination: The destination method. Should be same type as target.
+    public func inject(_ destination: T) {
+        internalInjector.inject(unsafeBitCast(destination, to: SwiftFuncWrapper.self).instructionPtr())
+    }
+    
+    /// Change origin method behavior as original.
+    public func reset() {
+        internalInjector.reset()
     }
 }
