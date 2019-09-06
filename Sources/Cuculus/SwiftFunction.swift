@@ -29,7 +29,11 @@ extension SwiftFuncWrapper {
         // 4:  5d                      pop    rbp
         // 5:  e9 XX XX ff ff          jmp    0xffffXXXX
         if (closureThunk.pointee << 16) == 0xe95de58948550000 {
-            let relativeJmpRel = closureThunk.pointee >> 48 + (closureThunk.advanced(by: 1).pointee << 48) >> 32 + 0xffffffff0000000a
+            let relativeJmpRel = UInt64(bitPattern: Int64(Int32(
+                bitPattern: UInt32(closureThunk.pointee >> 48)
+                    + UInt32((closureThunk.advanced(by: 1).pointee << 48) >> 32)
+                    + 0xa
+            )))
             return UnsafeMutableRawPointer(bitPattern: UInt(functionObject.pointee.address &+ relativeJmpRel))!
         }
         return nil
