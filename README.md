@@ -20,6 +20,12 @@ XCTAssertEqual(cat.bark(), "bowwow")
 | class | × |
 | protocol | × |
 
+| argument/return type | |
+|--|--|
+| concrete type | ○ |
+| generics | × |
+| variable arguments | ○ |
+
 | environment | |
 |--|--|
 | iOS | × |

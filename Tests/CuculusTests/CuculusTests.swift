@@ -25,14 +25,6 @@ struct CatS {
     func _bark() -> String {
         return "bowwow"
     }
-    
-    func eat(_ food: Any) -> Bool {
-        return true
-    }
-    
-    func _eat(_ food: Any) -> Bool {
-        return false
-    }
 }
 
 enum CatE {
@@ -54,6 +46,31 @@ enum CatE {
     }
 }
 
+extension CatS {
+    func eat(_ food: Any) -> Bool {
+        return true
+    }
+    
+    func _eat(_ food: Any) -> Bool {
+        return false
+    }
+    
+    func eatCollection<T: Collection>(_ foods: T) -> Bool {
+        return !foods.isEmpty
+    }
+    
+    func _eatCollection<T: Collection>(_ foods: T) -> Bool {
+        return foods.isEmpty
+    }
+
+    func eatVariable(_ foods: Any ...) -> Bool {
+        return !foods.isEmpty
+    }
+    
+    func _eatVariable(_ foods: Any ...) -> Bool {
+        return foods.isEmpty
+    }
+}
 
 final class CuculusTests: XCTestCase {
     func testTopLevelFunction() {
@@ -99,6 +116,23 @@ final class CuculusTests: XCTestCase {
         let injector = try! SwiftFunctionInjector(cat.eat)
         injector.inject(cat._eat)
         XCTAssertEqual(cat.eat(0), false)
+    }
+    
+    // TODO: Is not work yet generics method.
+    func _testStructGenericsMethod() {
+        let cat = CatS()
+        XCTAssertEqual(cat.eatCollection([1, 2, 3]), true)
+        let injector = try! SwiftFunctionInjector(cat._eatCollection as ([Int]) -> (Bool))
+        injector.inject(cat._eatCollection)
+        XCTAssertEqual(cat.eatCollection([1, 2, 3]), false)
+    }
+    
+    func testStructVariableArgsMethod() {
+        let cat = CatS()
+        XCTAssertEqual(cat.eatVariable(1, 2, 3), true)
+        let injector = try! SwiftFunctionInjector(cat.eatVariable)
+        injector.inject(cat._eatVariable)
+        XCTAssertEqual(cat.eatVariable(1, 2, 3), false)
     }
 
     static var allTests = [
