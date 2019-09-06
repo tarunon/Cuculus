@@ -72,6 +72,16 @@ extension CatS {
     }
 }
 
+struct Animal<Food> {
+    func eat(_ food: Food) -> Bool {
+        return true
+    }
+    
+    func _eat(_ food: Food) -> Bool {
+        return false
+    }
+}
+
 final class CuculusTests: XCTestCase {
     func testTopLevelFunction() {
         XCTAssertEqual(catBark(), "nyan")
@@ -127,6 +137,15 @@ final class CuculusTests: XCTestCase {
         XCTAssertEqual(cat.eatCollection([1, 2, 3]), false)
     }
     
+    // TODO: is not work yet generics structures method.
+    func _testGenericsStructMethod() {
+        let animal = Animal<Int>()
+        XCTAssertEqual(animal.eat(0), true)
+        let injector = try! SwiftFunctionInjector(animal.eat)
+        injector.inject(animal._eat)
+        XCTAssertEqual(animal.eat(0), false)
+    }
+    
     func testStructVariableArgsMethod() {
         let cat = CatS()
         XCTAssertEqual(cat.eatVariable(1, 2, 3), true)
@@ -141,5 +160,9 @@ final class CuculusTests: XCTestCase {
         ("testStructStaticMethod", testStructStaticMethod),
         ("testEnumInstanceMethod", testEnumInstanceMethod),
         ("testEnumStaticMethod", testEnumStaticMethod),
+        ("testStruct1AargumentMethod", testStruct1AargumentMethod),
+        // ("testStructGenericsMethod", testStructGenericsMethod),
+        // ("testGenericsStructMethod", testGenericsStructMethod),
+        ("testStructVariableArgsMethod", testStructVariableArgsMethod),
     ]
 }
