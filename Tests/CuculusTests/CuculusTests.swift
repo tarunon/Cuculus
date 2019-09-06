@@ -25,6 +25,14 @@ struct CatS {
     func _bark() -> String {
         return "bowwow"
     }
+    
+    func eat(_ food: Any) -> Bool {
+        return true
+    }
+    
+    func _eat(_ food: Any) -> Bool {
+        return false
+    }
 }
 
 enum CatE {
@@ -83,6 +91,14 @@ final class CuculusTests: XCTestCase {
        let injector = try! SwiftFunctionInjector(CatE.bark)
        injector.inject(CatE._bark)
        XCTAssertEqual(CatE.bark(), "bowwow")
+    }
+    
+    func testStruct1AargumentMethod() {
+        let cat = CatS()
+        XCTAssertEqual(cat.eat(0), true)
+        let injector = try! SwiftFunctionInjector(cat.eat)
+        injector.inject(cat._eat)
+        XCTAssertEqual(cat.eat(0), false)
     }
 
     static var allTests = [
