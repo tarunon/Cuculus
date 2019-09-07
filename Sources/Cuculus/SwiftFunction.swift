@@ -46,7 +46,6 @@ extension SwiftFuncWrapper {
                     + UInt32((closureThunk.advanced(by: 1).pointee << 56) >> 32)
                     + 0x9
             )))
-            print(String((0x12345678deadbeaf << 56) >> 32, radix: 16))
             return UnsafeMutableRawPointer(bitPattern: UInt(functionObject.pointee.address &+ relativeCallRel))!
         }
         return nil
