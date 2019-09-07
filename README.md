@@ -35,4 +35,5 @@ XCTAssertEqual(cat.bark(), "bowwow")
 | swift | |
 |--|--|
 | 5.1 | ○ |
-| 5.0.1 | × |
+| 5.0 | ○ |
+| 4.3 | × |

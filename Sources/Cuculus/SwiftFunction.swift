@@ -23,6 +23,7 @@ extension SwiftFuncWrapper {
 
     private func valueTypeMethodPtr() -> UnsafeMutableRawPointer? {
         let closureThunk = UnsafeMutablePointer<UInt64>(bitPattern: UInt(functionObject.pointee.address))!
+        #if swift(>=5.1)
         // Getting actual function ptr from instruction.
         // 0:  55                      push   rbp
         // 1:  48 89 e5                mov    rbp,rsp
@@ -36,6 +37,21 @@ extension SwiftFuncWrapper {
             )))
             return UnsafeMutableRawPointer(bitPattern: UInt(functionObject.pointee.address &+ relativeJmpRel))!
         }
+        #elseif swift(>=5.0)
+        // Getting actual function ptr from instruction
+        // 0:  55                      push   rbp
+        // 1:  48 89 e5                mov    rbp,rsp
+        // 4:  e8 XX XX ff ff          call   0xffffXXXX
+        if (closureThunk.pointee << 24) == 0xe8e5894855000000 {
+            let relativeCallRel = UInt64(bitPattern: Int64(Int32(
+                bitPattern: UInt32(closureThunk.pointee >> 40)
+                    + UInt32((closureThunk.advanced(by: 1).pointee << 56) >> 32)
+                    + 0x9
+            )))
+            return UnsafeMutableRawPointer(bitPattern: UInt(functionObject.pointee.address &+ relativeCallRel))!
+        }
+        #endif
+        // Uncheck swift 4.3 behaviour
         return nil
     }
     
