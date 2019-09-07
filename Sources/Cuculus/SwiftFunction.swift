@@ -37,7 +37,7 @@ extension SwiftFuncWrapper {
             )))
             return UnsafeMutableRawPointer(bitPattern: UInt(functionObject.pointee.address &+ relativeJmpRel))!
         }
-        #elseif swift(>=5.0)
+        #elseif swift(>=4.2)
         // Getting actual function ptr from instruction
         // 0:  55                      push   rbp
         // 1:  48 89 e5                mov    rbp,rsp
@@ -48,10 +48,10 @@ extension SwiftFuncWrapper {
                     + UInt32((closureThunk.advanced(by: 1).pointee << 56) >> 32)
                     + 0x9
             )))
+            print(String((0x12345678deadbeaf << 56) >> 32, radix: 16))
             return UnsafeMutableRawPointer(bitPattern: UInt(functionObject.pointee.address &+ relativeCallRel))!
         }
         #endif
-        // Uncheck swift 4.3 behaviour
         return nil
     }
     
