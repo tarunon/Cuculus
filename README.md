@@ -31,3 +31,8 @@ XCTAssertEqual(cat.bark(), "bowwow")
 | iOS | × |
 | iPhone Simulator | ○ |
 | macOS | ○ |
+
+| swift | |
+|--|--|
+| 5.1 | ○ |
+| 5.0.1 | × |
