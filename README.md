@@ -6,26 +6,12 @@ A library for Swift Function Hooking.
 ```swift
 let cat = Cat()
 XCTAssertEqual(cat.bark(), "nyan")
-let injector = try! SwiftFunctionInjector(cat.bark)
-injector.inject(cat._bark)
+let injector = try! SwiftFunctionInjector("Cat.bark")
+try! injector.inject("Cat._bark")
 XCTAssertEqual(cat.bark(), "bowwow")
 ```
 
 ## Support
-| function | |
-|--|--|
-| top level function | ○ |
-| struct | ○ |
-| enum | ○ |
-| class | × |
-| protocol | × |
-
-| argument/return type | |
-|--|--|
-| concrete type | ○ |
-| generics | × |
-| variable arguments | ○ |
-
 | environment | |
 |--|--|
 | iOS | × |

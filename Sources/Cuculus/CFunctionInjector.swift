@@ -6,6 +6,10 @@
 
 import Foundation
 
+// dlfcn.h
+// #define    RTLD_DEFAULT    ((void *) -2)    /* Use default search algorithm. */
+let RTLD_DEFAULT = UnsafeMutableRawPointer(bitPattern: -2)
+
 class CFunctionInjector {
     struct Error : LocalizedError, CustomStringConvertible {
         var message: String
@@ -25,6 +29,8 @@ class CFunctionInjector {
     /// - Parameter target: The target functions instruction pointer.
     /// - Throws: Error that fail CFunctionInjector initialize
     init(_ target: UnsafeMutableRawPointer) throws {
+        assert(Thread.isMainThread)
+        
         // make the memory containing the original function writable
         let pageSize = sysconf(_SC_PAGESIZE)
         if pageSize == -1 {
@@ -44,6 +50,13 @@ class CFunctionInjector {
         self.escapedInstructionBytes0 = originalFunctionPointer0.pointee
         self.originalFunctionPointer8 = UnsafeMutablePointer(bitPattern: Int(bitPattern: target) + 8)!
         self.escapedInstructionBytes8 = originalFunctionPointer8.pointee
+    }
+    
+    convenience init(_ symbolName: String) throws {
+        guard let target = dlsym(RTLD_DEFAULT, symbolName) else {
+            throw Error(message: "symbol not found: \(symbolName)")
+        }
+        try self.init(target)
     }
 
     deinit {
@@ -66,6 +79,13 @@ class CFunctionInjector {
         originalFunctionPointer0.pointee = 0xb848 | destinationAddress << 16
         // 2. jmp rax
         originalFunctionPointer8.pointee = 0xe0ff << 16 | destinationAddress >> 48
+    }
+    
+    func inject(_ symbolName: String) throws {
+        guard let destination = dlsym(RTLD_DEFAULT, symbolName) else {
+            throw Error(message: "symbol not found: \(symbolName)")
+        }
+        inject(destination)
     }
 
     /// Reset function injection.

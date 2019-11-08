@@ -53,6 +53,14 @@ enum CatE {
 }
 
 extension CatS {
+    var name: String {
+        return "tama"
+    }
+    
+    var _name: String {
+        return "mike"
+    }
+    
     func eat(_ food: Any) -> Bool {
         return true
     }
@@ -76,6 +84,14 @@ extension CatS {
     func _eatVariable(_ foods: Any ...) -> Bool {
         return foods.isEmpty
     }
+    
+    func 和名() -> String {
+        return "たま"
+    }
+
+    func _和名() -> String {
+        return "みけ"
+    }
 }
 
 struct Animal<Food> {
@@ -86,4 +102,42 @@ struct Animal<Food> {
     func _eat(_ food: Food) -> Bool {
         return false
     }
+}
+
+class CatC {
+    func bark() -> String {
+        return "nyan"
+    }
+
+    func _bark() -> String {
+        return "bowwow"
+    }
+}
+
+class CatCSubclass: CatC {
+    override func bark() -> String {
+        return "nyan2"
+    }
+
+    func _bark2() -> String {
+        return "bowwow2"
+    }
+}
+
+protocol CatP {
+    
+}
+
+extension CatP {
+    func bark() -> String {
+        return "nyan"
+    }
+
+    func _bark() -> String {
+        return "bowwow"
+    }
+}
+
+struct CatPInstance: CatP {
+    
 }
