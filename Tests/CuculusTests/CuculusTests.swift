@@ -9,13 +9,13 @@ final class CuculusTests: XCTestCase {
         originalFunctionSelect: ([SwiftFunction]) -> SwiftFunction? = SwiftFunctionInjector.selectFunction(_:),
         hookedFunctionName: String,
         hookedFunctionSelect: ([SwiftFunction]) -> SwiftFunction? = SwiftFunctionInjector.selectFunction(_:),
-        console: Bool = false,
+        debug: Bool = false,
         file: StaticString = #file,
         line: UInt = #line
     ) {
         do {
             XCTAssertEqual(function(), 1, file: file, line: line)
-            let injector = try SwiftFunctionInjector(originalFunctionName, selectFunction: originalFunctionSelect, console: console)
+            let injector = try SwiftFunctionInjector(originalFunctionName, selectFunction: originalFunctionSelect, debug: debug)
             try injector.inject(hookedFunctionName, selectFunction: hookedFunctionSelect)
             XCTAssertEqual(function(), 0, file: file, line: line)
         } catch {

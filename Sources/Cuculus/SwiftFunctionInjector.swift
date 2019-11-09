@@ -20,7 +20,7 @@ public class SwiftFunctionInjector {
     /// Create FunctionInjector for change origin method behavior.
     /// - Parameter target: The target method. Support struct/enum or top level function.
     public init(_ targetFuncName: String, selectFunction: ([SwiftFunction]) -> SwiftFunction? = selectFunction(_:), debug: Bool = false) throws {
-        self.debug = console
+        self.debug = debug
         guard let function = SwiftFunctionTable.instance.match(targetFuncName, select: selectFunction) else {
             throw CFunctionInjector.Error(message: "function name \(targetFuncName) is not found on mangle table")
         }
