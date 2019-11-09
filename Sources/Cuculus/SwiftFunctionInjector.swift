@@ -11,7 +11,7 @@ import Foundation
 /// When release this object, the method work as original.
 public class SwiftFunctionInjector {
     var internalInjector: CFunctionInjector
-    var console: Bool
+    var debug: Bool
         
     public static func selectFunction(_ functions: [SwiftFunction]) -> SwiftFunction? {
         return functions.sorted(by: { $0.symbol.name.count < $1.symbol.name.count }).first(where: { _ in true })
@@ -19,12 +19,12 @@ public class SwiftFunctionInjector {
 
     /// Create FunctionInjector for change origin method behavior.
     /// - Parameter target: The target method. Support struct/enum or top level function.
-    public init(_ targetFuncName: String, selectFunction: ([SwiftFunction]) -> SwiftFunction? = selectFunction(_:), console: Bool = false) throws {
-        self.console = console
+    public init(_ targetFuncName: String, selectFunction: ([SwiftFunction]) -> SwiftFunction? = selectFunction(_:), debug: Bool = false) throws {
+        self.debug = console
         guard let function = SwiftFunctionTable.instance.match(targetFuncName, select: selectFunction) else {
             throw CFunctionInjector.Error(message: "function name \(targetFuncName) is not found on mangle table")
         }
-        if console {
+        if debug {
             print("Function selected: \(function)")
         }
         internalInjector = try CFunctionInjector(function.symbol.address)
@@ -36,7 +36,7 @@ public class SwiftFunctionInjector {
         guard let function = SwiftFunctionTable.instance.match(destinationFuncName, select: selectFunction) else {
             throw CFunctionInjector.Error(message: "function name \(destinationFuncName) is not found on mangle table")
         }
-        if console {
+        if debug {
             print("Function selected: \(function)")
         }
         internalInjector.inject(function.symbol.address)
