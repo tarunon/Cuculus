@@ -72,12 +72,19 @@ final class CuculusTests: XCTestCase {
         XCTAssertEqual(cat.eatVariable(1, 2, 3), false)
     }
     
-    func testComputedProperty() {
+    func testInstanceComputedProperty() {
         let cat = CatS()
         XCTAssertEqual(cat.name, "tama")
         let injector = try! SwiftFunctionInjector("CatS.name")
         try! injector.inject("CatS._name")
         XCTAssertEqual(cat.name, "mike")
+    }
+    
+    func testStaticComputedProperty() {
+        XCTAssertEqual(CatS.name, "tama")
+        let injector = try! SwiftFunctionInjector("static CatS.name")
+        try! injector.inject("static CatS._name")
+        XCTAssertEqual(CatS.name, "mike")
     }
     
     func testKanaFunction() {
@@ -111,6 +118,24 @@ final class CuculusTests: XCTestCase {
         try! injector.inject("CatP._bark")
         XCTAssertEqual(cat.bark(), "bowwow")
     }
+    
+    func testThrowsMethod() {
+        let cat = CatS()
+        XCTAssertNoThrow(try cat.stand())
+        let injector = try! SwiftFunctionInjector("CatS.stand")
+        try! injector.inject("CatS._stand")
+        XCTAssertThrowsError(try cat.stand())
+    }
+    
+    func testSubscript() {
+        let cat = CatS()
+        XCTAssertEqual(cat[1], 1)
+        let injector = try! SwiftFunctionInjector("CatS.subscript")
+        try! injector.inject("CatS.subscript", selectFunction: { functions in
+            return functions.first(where: { $0.funcName.contains("hooked:") })
+        })
+        XCTAssertEqual(cat[1], 2)
+    }
 
     static var allTests = [
         ("testTopLevelFunction", testTopLevelFunction),
@@ -122,7 +147,7 @@ final class CuculusTests: XCTestCase {
         ("testStructGenericsMethod", testStructGenericsMethod),
         ("testGenericsStructMethod", testGenericsStructMethod),
         ("testStructVariableArgsMethod", testStructVariableArgsMethod),
-        ("testComputedProperty", testComputedProperty),
+        ("testInstanceComputedProperty", testInstanceComputedProperty),
         ("testKanaFunction", testKanaFunction),
         ("testClassInstanceMethod", testClassInstanceMethod),
         ("testSubclassInstanceMethod", testSubclassInstanceMethod),

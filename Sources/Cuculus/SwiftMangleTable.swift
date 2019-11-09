@@ -1,5 +1,5 @@
 //
-//  SwiftMangleTable
+//  SwiftFunctionTable
 //  
 //
 //  Created by tarunon on 2019/11/08.
@@ -23,39 +23,52 @@ func swiftDemangle(_ mangledName: String) -> String {
     }
 }
 
-
-struct SwiftMangleTable {
-    var table: [String: String]
-    struct Pair {
-        var funcName: String
-        var symbolName: String
-        
-        var actualSymbolName: String {
-            if symbolName.hasPrefix("_") {
-                return String(symbolName[symbolName.index(symbolName.startIndex, offsetBy: 1)...])
-            }
-            return symbolName
+public struct SwiftFunction {
+    public var funcName: String
+    public var symbolName: String
+    
+    var actualSymbolName: String {
+        if symbolName.hasPrefix("_") {
+            return String(symbolName[symbolName.index(symbolName.startIndex, offsetBy: 1)...])
         }
+        return symbolName
     }
+}
+
+struct SwiftFunctionTable {
+    var table: [String: String]
     
     private init() {
         self.table = Dictionary(
             SymbolNameList().lazy
                 .filter { $0.hasPrefix("_$s") }
-                .map { (key: swiftDemangle($0), value: $0) }
-                .filter { key, value in
-                    ![
-                        "curry thunk of",
-                        "partial apply forwarder for",
-                        "property descriptor for",
-                        "method descriptor for"
-                    ].contains(where: { key.hasPrefix($0) })
-                },
+                .filter { symbolName -> Bool in
+                    let iv = [
+                        "i", // entity-spec ::= label-list type file-discriminator? 'i' ACCESSOR // subscript
+                        "v", // entity-spec ::= decl-name label-list? type 'v' ACCESSOR          // variable
+                        ]
+                        .flatMap { entitySpec -> [String] in
+                            [
+                                entitySpec + "m", // ACCESSOR ::= 'm' // materializeForSet
+                                entitySpec + "s", // ACCESSOR ::= 's' // setter
+                                entitySpec + "g", // ACCESSOR ::= 'g' // getter
+                                entitySpec + "G", // ACCESSOR ::= 'G' // global getter
+                                entitySpec + "w", // ACCESSOR ::= 'w' // willSet
+                                entitySpec + "W", // ACCESSOR ::= 'W' // didSet
+                                entitySpec + "r", // ACCESSOR ::= 'r' // read
+                                entitySpec + "M", // ACCESSOR ::= 'M' // modify (temporary)
+                            ]
+                        }
+                    return (iv + ["F"]) // entity-spec ::= decl-name label-list function-signature generic-signature? 'F'    // function
+                        .flatMap { [$0, $0 + "Z"] } // static ::= 'Z'
+                        .contains(where: { symbolName.hasSuffix($0) })
+                }
+                .map { (key: swiftDemangle($0), value: $0) },
             uniquingKeysWith: { $1 }
         )
     }
     
-    static var instance = SwiftMangleTable()
+    static var instance = SwiftFunctionTable()
     
     static func match(funcName: String, candidate: String) -> Bool {
         let escapedFuncName = funcName.replacingOccurrences(of: "static ", with: "")
@@ -68,15 +81,11 @@ struct SwiftMangleTable {
             )
     }
     
-    func match(_ funcName: String, select: (AnySequence<String>) -> String?) -> Pair? {
+    func match(_ funcName: String, select: ([SwiftFunction]) -> SwiftFunction?) -> SwiftFunction? {
         if let symbolName = table[funcName] {
-            return Pair(funcName: funcName, symbolName: symbolName)
+            return SwiftFunction(funcName: funcName, symbolName: symbolName)
         }
-        if let key = select(AnySequence(table.keys.filter({ SwiftMangleTable.match(funcName: funcName, candidate: $0) }))),
-            let value = table[key] {
-            return Pair(funcName: key, symbolName: value)
-        }
-        return nil
+        return select(Array(table.filter({ SwiftFunctionTable.match(funcName: funcName, candidate: $0.key) }).map({ SwiftFunction(funcName: $0.key, symbolName: $0.value) })))
     }
 }
 
@@ -141,11 +150,11 @@ struct SymbolNameIterator: IteratorProtocol {
             self.reduce()
         }
         
-        mutating func curNext() {
+        private mutating func curNext() {
             curCmd = UnsafeMutableRawPointer(curCmd).advanced(by: Int(curCmd.pointee.cmdsize)).assumingMemoryBound(to: segment_command_64.self)
         }
         
-        mutating func reduce() {
+        private mutating func reduce() {
             (0..<header.pointee.ncmds).map { _ in }.forEach { self.curNext() }
             linkedBase = slide + Int(linkeditCmd.pointee.vmaddr) - Int(linkeditCmd.pointee.fileoff)
             if linkeditCmd == nil || symtabCmd == nil {

@@ -61,6 +61,14 @@ extension CatS {
         return "mike"
     }
     
+    static var name: String {
+        return "tama"
+    }
+    
+    static var _name: String {
+        return "mike"
+    }
+    
     func eat(_ food: Any) -> Bool {
         return true
     }
@@ -91,6 +99,23 @@ extension CatS {
 
     func _和名() -> String {
         return "みけ"
+    }
+    
+    func stand() throws {
+        
+    }
+    
+    func _stand() throws {
+        struct _Error: Error {}
+        throw _Error()
+    }
+    
+    subscript(_ i: Int) -> Int {
+        return i
+    }
+    
+    subscript(hooked i: Int) -> Int {
+        return i + 1
     }
 }
 
