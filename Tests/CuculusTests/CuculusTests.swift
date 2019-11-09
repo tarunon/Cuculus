@@ -75,7 +75,7 @@ final class CuculusTests: XCTestCase {
     func testComputedProperty() {
         let cat = CatS()
         XCTAssertEqual(cat.name, "tama")
-        let injector = try! SwiftFunctionInjector("CatS.name", console: true)
+        let injector = try! SwiftFunctionInjector("CatS.name")
         try! injector.inject("CatS._name")
         XCTAssertEqual(cat.name, "mike")
     }

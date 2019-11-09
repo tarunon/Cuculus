@@ -42,7 +42,15 @@ struct SwiftMangleTable {
         self.table = Dictionary(
             SymbolNameList().lazy
                 .filter { $0.hasPrefix("_$s") }
-                .map { (key: swiftDemangle($0), value: $0) },
+                .map { (key: swiftDemangle($0), value: $0) }
+                .filter { key, value in
+                    ![
+                        "curry thunk of",
+                        "partial apply forwarder for",
+                        "property descriptor for",
+                        "method descriptor for"
+                    ].contains(where: { key.hasPrefix($0) })
+                },
             uniquingKeysWith: { $1 }
         )
     }
@@ -51,7 +59,7 @@ struct SwiftMangleTable {
     
     static func match(funcName: String, candidate: String) -> Bool {
         let escapedFuncName = funcName.replacingOccurrences(of: "static ", with: "")
-        return (!funcName.hasPrefix("static ") || candidate.hasPrefix("static ")) &&
+        return (!funcName.hasPrefix("static ") != candidate.hasPrefix("static ")) &&
             (
                 candidate.contains(escapedFuncName + " ") ||
                 candidate.contains(escapedFuncName + "(") ||
@@ -60,11 +68,11 @@ struct SwiftMangleTable {
             )
     }
     
-    func match(_ funcName: String, select: ([String]) -> String?) -> Pair? {
+    func match(_ funcName: String, select: (AnySequence<String>) -> String?) -> Pair? {
         if let symbolName = table[funcName] {
             return Pair(funcName: funcName, symbolName: symbolName)
         }
-        if let key = select(Array(table.keys.filter({ SwiftMangleTable.match(funcName: funcName, candidate: $0) }))),
+        if let key = select(AnySequence(table.keys.filter({ SwiftMangleTable.match(funcName: funcName, candidate: $0) }))),
             let value = table[key] {
             return Pair(funcName: key, symbolName: value)
         }
