@@ -51,13 +51,6 @@ class CFunctionInjector {
         self.originalFunctionPointer8 = UnsafeMutablePointer(bitPattern: Int(bitPattern: target) + 8)!
         self.escapedInstructionBytes8 = originalFunctionPointer8.pointee
     }
-    
-    convenience init(_ symbolName: String) throws {
-        guard let target = dlsym(RTLD_DEFAULT, symbolName) else {
-            throw Error(message: "symbol not found: \(symbolName)")
-        }
-        try self.init(target)
-    }
 
     deinit {
         reset()
@@ -79,13 +72,6 @@ class CFunctionInjector {
         originalFunctionPointer0.pointee = 0xb848 | destinationAddress << 16
         // 2. jmp rax
         originalFunctionPointer8.pointee = 0xe0ff << 16 | destinationAddress >> 48
-    }
-    
-    func inject(_ symbolName: String) throws {
-        guard let destination = dlsym(RTLD_DEFAULT, symbolName) else {
-            throw Error(message: "symbol not found: \(symbolName)")
-        }
-        inject(destination)
     }
 
     /// Reset function injection.

@@ -47,12 +47,14 @@ final class CuculusTests: XCTestCase {
             hookedFunctionName: "static TestStruct.property_hooked"
         )
 
+        #if compiler(>=5.0)
         assert(
             function: { type[0] },
             originalFunctionName: "static TestStruct.subscript",
             hookedFunctionName: "static TestStruct.subscript",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
+        #endif
 
         assert(
             function: { type.genericFunction(0) },
@@ -114,12 +116,14 @@ final class CuculusTests: XCTestCase {
             hookedFunctionName: "static TestEnum.property_hooked"
         )
 
+        #if compiler(>=5.0)
         assert(
             function: { type[0] },
             originalFunctionName: "static TestEnum.subscript",
             hookedFunctionName: "static TestEnum.subscript",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
+        #endif
 
         assert(
             function: { type.genericFunction(0) },
@@ -181,12 +185,14 @@ final class CuculusTests: XCTestCase {
             hookedFunctionName: "static TestClass.property_hooked"
         )
 
+        #if compiler(>=5.0)
         assert(
             function: { type[0] },
             originalFunctionName: "static TestClass.subscript",
             hookedFunctionName: "static TestClass.subscript",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
+        #endif
 
         assert(
             function: { type.genericFunction(0) },
@@ -248,12 +254,14 @@ final class CuculusTests: XCTestCase {
             hookedFunctionName: "static TestSubclass.property_hooked"
         )
 
+        #if compiler(>=5.0)
         assert(
             function: { type[0] },
             originalFunctionName: "static TestSubclass.subscript",
             hookedFunctionName: "static TestSubclass.subscript",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
+        #endif
 
         assert(
             function: { type.genericFunction(0) },
@@ -315,12 +323,14 @@ final class CuculusTests: XCTestCase {
             hookedFunctionName: "static TestExistential.property_hooked"
         )
 
+        #if compiler(>=5.0)
         assert(
             function: { type[0] },
             originalFunctionName: "static TestExistential.subscript",
             hookedFunctionName: "static TestExistential.subscript",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
+        #endif
 
         assert(
             function: { type.genericFunction(0) },
@@ -382,12 +392,14 @@ final class CuculusTests: XCTestCase {
             hookedFunctionName: "static TestGenericStruct.property_hooked"
         )
 
+        #if compiler(>=5.0)
         assert(
             function: { type[0] },
             originalFunctionName: "static TestGenericStruct.subscript",
             hookedFunctionName: "static TestGenericStruct.subscript",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
+        #endif
 
         assert(
             function: { type.genericFunction(0) },

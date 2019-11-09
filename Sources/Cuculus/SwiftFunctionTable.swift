@@ -25,24 +25,31 @@ func swiftDemangle(_ mangledName: String) -> String {
 
 public struct SwiftFunction {
     public var funcName: String
-    public var symbolName: String
+    public var symbol: Symbol
     
     var actualSymbolName: String {
-        if symbolName.hasPrefix("_") {
-            return String(symbolName[symbolName.index(symbolName.startIndex, offsetBy: 1)...])
+        if symbol.name.hasPrefix("_") {
+            return String(symbol.name[symbol.name.index(symbol.name.startIndex, offsetBy: 1)...])
         }
-        return symbolName
+        return symbol.name
     }
 }
 
+public struct Symbol {
+    public var name: String
+    public var address: UnsafeMutableRawPointer
+}
+
 struct SwiftFunctionTable {
-    var table: [String: String]
+    var table: [String: Symbol]
     
     private init() {
+        #if compiler(>=5.0)
         self.table = Dictionary(
-            SymbolNameList().lazy
-                .filter { $0.hasPrefix("_$s") }
-                .filter { symbolName -> Bool in
+            SymbolList().lazy
+                .filter { $0.name.hasPrefix("_$s") }
+                .filter { symbol -> Bool in
+                    // https://github.com/apple/swift/blob/swift-5.0-branch/docs/ABI/Mangling.rst
                     let iv = [
                         "i", // entity-spec ::= label-list type file-discriminator? 'i' ACCESSOR // subscript
                         "v", // entity-spec ::= decl-name label-list? type 'v' ACCESSOR          // variable
@@ -61,11 +68,39 @@ struct SwiftFunctionTable {
                         }
                     return (iv + ["F"]) // entity-spec ::= decl-name label-list function-signature generic-signature? 'F'    // function
                         .flatMap { [$0, $0 + "Z"] } // static ::= 'Z'
-                        .contains(where: { symbolName.hasSuffix($0) })
+                        .contains(where: { symbol.name.hasSuffix($0) })
                 }
-                .map { (key: swiftDemangle($0), value: $0) },
+                .map { (key: swiftDemangle($0.name), value: $0) },
             uniquingKeysWith: { $1 }
         )
+        #elseif compiler(>=4.2)
+        self.table = Dictionary(
+            SymbolList().lazy
+                .filter { $0.name.hasPrefix("_$S") }
+                .filter { symbol -> Bool in
+                    // https://github.com/apple/swift/blob/swift-4.2-branch/docs/ABI/Mangling.rst
+                    let iv = [
+                        "i", // entity-spec ::= label-list type file-discriminator? 'i' ACCESSOR // subscript
+                        "v", // entity-spec ::= decl-name label-list? type 'v' ACCESSOR          // variable
+                        ]
+                        .flatMap { entitySpec -> [String] in
+                            [
+                                entitySpec + "m", // ACCESSOR ::= 'm' // materializeForSet
+                                entitySpec + "s", // ACCESSOR ::= 's' // setter
+                                entitySpec + "g", // ACCESSOR ::= 'g' // getter
+                                entitySpec + "G", // ACCESSOR ::= 'G' // global getter
+                                entitySpec + "w", // ACCESSOR ::= 'w' // willSet
+                                entitySpec + "W", // ACCESSOR ::= 'W' // didSet
+                            ]
+                    }
+                    return (iv + ["F"]) // entity-spec ::= decl-name label-list function-signature generic-signature? 'F'    // function
+                        .flatMap { [$0, $0 + "Z"] } // static ::= 'Z'
+                        .contains(where: { symbol.name.hasSuffix($0) })
+                }
+                .map { (key: swiftDemangle($0.name), value: $0) },
+            uniquingKeysWith: { $1 }
+        )
+        #endif
     }
     
     static var instance = SwiftFunctionTable()
@@ -82,24 +117,24 @@ struct SwiftFunctionTable {
     }
     
     func match(_ funcName: String, select: ([SwiftFunction]) -> SwiftFunction?) -> SwiftFunction? {
-        if let symbolName = table[funcName] {
-            return SwiftFunction(funcName: funcName, symbolName: symbolName)
+        if let symbol = table[funcName] {
+            return SwiftFunction(funcName: funcName, symbol: symbol)
         }
-        return select(Array(table.filter({ SwiftFunctionTable.match(funcName: funcName, candidate: $0.key) }).map({ SwiftFunction(funcName: $0.key, symbolName: $0.value) })))
+        return select(Array(table.filter({ SwiftFunctionTable.match(funcName: funcName, candidate: $0.key) }).map({ SwiftFunction(funcName: $0.key, symbol: $0.value) })))
     }
 }
 
-struct SymbolNameList: Sequence {
-    typealias Iterator = SymbolNameIterator
-    __consuming func makeIterator() -> SymbolNameIterator {
-        return SymbolNameIterator()
+struct SymbolList: Sequence {
+    typealias Iterator = SymbolIterator
+    func makeIterator() -> SymbolIterator {
+        return SymbolIterator()
     }
 }
 
-struct SymbolNameIterator: IteratorProtocol {
-    typealias Element = String
+struct SymbolIterator: IteratorProtocol {
+    typealias Element = Symbol
     struct SymbolTable: IteratorProtocol {
-        typealias Element = String
+        typealias Element = Symbol
         
         static let linkeditName = SEG_LINKEDIT.data(using: String.Encoding.utf8)!.map({ $0 })
         let header: UnsafePointer<mach_header>
@@ -165,14 +200,18 @@ struct SymbolNameIterator: IteratorProtocol {
             symbolIndex = 0
         }
         
-        mutating func next() -> String? {
+        mutating func next() -> Symbol? {
             if symbolCount <= symbolIndex {
                 return nil
             }
             defer {
                 symbolIndex += 1
             }
-            return String(cString: strTable.advanced(by: Int(symbolTable.advanced(by: Int(symbolIndex)).pointee.n_un.n_strx)))
+            let symbol = Symbol(
+                name: String(cString: strTable.advanced(by: Int(symbolTable.advanced(by: Int(symbolIndex)).pointee.n_un.n_strx))),
+                address: UnsafeMutableRawPointer(bitPattern: Int(linkedBase) + Int(symbolTable.advanced(by: Int(symbolIndex)).pointee.n_value))!
+            )
+            return symbol
         }
     }
     let imageCount = _dyld_image_count()
@@ -193,7 +232,7 @@ struct SymbolNameIterator: IteratorProtocol {
         }
     }
     
-    mutating func next() -> String? {
+    mutating func next() -> Symbol? {
         while imageIndex < imageCount {
             if let result = symbolTable.next() {
                 return result

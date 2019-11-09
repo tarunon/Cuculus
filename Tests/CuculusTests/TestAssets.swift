@@ -20,8 +20,10 @@ protocol TestAsset {
     static func function_hooked() -> Int
     static var property: Int { get }
     static var property_hooked: Int { get }
+    #if compiler(>=5.0)
     static subscript(_ i: Int) -> Int { get }
     static subscript(hooked i: Int) -> Int { get }
+    #endif
     static func genericFunction<T>(_ arg: T) -> Int
     static func genericFunction_hooked<T>(_ arg: T) -> Int
     static func throwsFunction() throws -> Int
@@ -57,6 +59,7 @@ struct TestStruct: TestAsset {
         return 0
     }
 
+    #if compiler(>=5.0)
     static subscript(i: Int) -> Int {
         return 1
     }
@@ -64,6 +67,7 @@ struct TestStruct: TestAsset {
     static subscript(hooked i: Int) -> Int {
         return 0
     }
+    #endif
 
     static func genericFunction<T>(_ arg: T) -> Int {
         return 1
@@ -140,6 +144,7 @@ enum TestEnum: TestAsset {
         return 0
     }
 
+    #if compiler(>=5.0)
     static subscript(i: Int) -> Int {
         return 1
     }
@@ -147,6 +152,7 @@ enum TestEnum: TestAsset {
     static subscript(hooked i: Int) -> Int {
         return 0
     }
+    #endif
 
     static func genericFunction<T>(_ arg: T) -> Int {
         return 1
@@ -223,6 +229,7 @@ class TestClass: TestAsset {
         return 0
     }
 
+    #if compiler(>=5.0)
     class subscript(i: Int) -> Int {
         return 1
     }
@@ -230,6 +237,7 @@ class TestClass: TestAsset {
     class subscript(hooked i: Int) -> Int {
         return 0
     }
+    #endif
 
     class func genericFunction<T>(_ arg: T) -> Int {
         return 1
@@ -306,6 +314,7 @@ class TestSubclass: TestClass {
         return 0
     }
 
+    #if compiler(>=5.0)
     override class subscript(i: Int) -> Int {
         return 1
     }
@@ -313,6 +322,7 @@ class TestSubclass: TestClass {
     override class subscript(hooked i: Int) -> Int {
         return 0
     }
+    #endif
 
     override class func genericFunction<T>(_ arg: T) -> Int {
         return 1
@@ -392,6 +402,7 @@ extension TestExistential {
         return 0
     }
 
+    #if compiler(>=5.0)
     static subscript(i: Int) -> Int {
         return 1
     }
@@ -399,6 +410,7 @@ extension TestExistential {
     static subscript(hooked i: Int) -> Int {
         return 0
     }
+    #endif
 
     static func genericFunction<T>(_ arg: T) -> Int {
         return 1
@@ -478,6 +490,7 @@ struct TestGenericStruct<T>: TestAsset {
         return 0
     }
 
+    #if compiler(>=5.0)
     static subscript(i: Int) -> Int {
         return 1
     }
@@ -485,6 +498,7 @@ struct TestGenericStruct<T>: TestAsset {
     static subscript(hooked i: Int) -> Int {
         return 0
     }
+    #endif
 
     static func genericFunction<T>(_ arg: T) -> Int {
         return 1
