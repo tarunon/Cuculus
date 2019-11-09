@@ -26,13 +26,6 @@ func swiftDemangle(_ mangledName: String) -> String {
 public struct SwiftFunction {
     public var funcName: String
     public var symbol: Symbol
-    
-    var actualSymbolName: String {
-        if symbol.name.hasPrefix("_") {
-            return String(symbol.name[symbol.name.index(symbol.name.startIndex, offsetBy: 1)...])
-        }
-        return symbol.name
-    }
 }
 
 public struct Symbol {

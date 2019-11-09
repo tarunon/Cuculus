@@ -1,7 +1,7 @@
 matrix:
 include:
 - os: osx
-language: objective-c
+language: swift
 osx_image: xcode11
 script:
 - set -o pipefail
