@@ -1,156 +1,373 @@
 import XCTest
-@testable import Cuculus
+import Cuculus
 import MachO
 
-final class CuculusTests: XCTestCase {    
-    func testTopLevelFunction() {
-        XCTAssertEqual(catBark(), "nyan")
-        let injector = try! SwiftFunctionInjector("catBark")
-        try! injector.inject("dogBark")
-        XCTAssertEqual(catBark(), "bowwow")
+final class CuculusTests: XCTestCase {
+    func assert(
+        function: () -> Int,
+        originalFunctionName: String,
+        originalFunctionSelect: ([SwiftFunction]) -> SwiftFunction? = SwiftFunctionInjector.selectFunction(_:),
+        hookedFunctionName: String,
+        hookedFunctionSelect: ([SwiftFunction]) -> SwiftFunction? = SwiftFunctionInjector.selectFunction(_:),
+        console: Bool = false,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        do {
+            XCTAssertEqual(function(), 1, file: file, line: line)
+            let injector = try SwiftFunctionInjector(originalFunctionName, selectFunction: originalFunctionSelect, console: console)
+            try injector.inject(hookedFunctionName, selectFunction: hookedFunctionSelect)
+            XCTAssertEqual(function(), 0, file: file, line: line)
+        } catch {
+            XCTFail(error.localizedDescription)
+        }
+    }
+    
+    func testGlobalFunc() {
+        assert(
+            function: globalFunction,
+            originalFunctionName: "globalFunction",
+            hookedFunctionName: "globalFunction_hooked"
+        )
+    }
+    
+    func testStructFunc() {
+        let instance = TestStruct.instance
+        let type = TestStruct.self
+
+        assert(
+            function: type.function,
+            originalFunctionName: "static TestStruct.function",
+            hookedFunctionName: "static TestStruct.function_hooked"
+        )
+        
+        assert(
+            function: { type.property },
+            originalFunctionName: "static TestStruct.property",
+            hookedFunctionName: "static TestStruct.property_hooked"
+        )
+        
+        assert(
+            function: { type[0] },
+            originalFunctionName: "static TestStruct.subscript",
+            hookedFunctionName: "static TestStruct.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { type.genericFunction(0) },
+            originalFunctionName: "static TestStruct.genericFunction",
+            hookedFunctionName: "static TestStruct.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! type.throwsFunction() },
+            originalFunctionName: "static TestStruct.throwsFunction",
+            hookedFunctionName: "static TestStruct.throwsFunction_hooked"
+        )
+        
+        assert(
+            function: instance.function,
+            originalFunctionName: "TestStruct.function",
+            hookedFunctionName: "TestStruct.function_hooked"
+        )
+        
+        assert(
+            function: { instance.property },
+            originalFunctionName: "TestStruct.property",
+            hookedFunctionName: "TestStruct.property_hooked"
+        )
+        
+        assert(
+            function: { instance[0] },
+            originalFunctionName: "TestStruct.subscript",
+            hookedFunctionName: "TestStruct.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { instance.genericFunction(0) },
+            originalFunctionName: "TestStruct.genericFunction",
+            hookedFunctionName: "TestStruct.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! instance.throwsFunction() },
+            originalFunctionName: "TestStruct.throwsFunction",
+            hookedFunctionName: "TestStruct.throwsFunction_hooked"
+        )
     }
 
-    func testStructInstanceMethod() {
-        let cat = CatS()
-        XCTAssertEqual(cat.bark(), "nyan")
-        let injector = try! SwiftFunctionInjector("CatS.bark")
-        try! injector.inject("CatS._bark")
-        XCTAssertEqual(cat.bark(), "bowwow")
+    func testEnumFunc() {
+        let instance = TestEnum.instance
+        let type = TestEnum.self
+
+        assert(
+            function: type.function,
+            originalFunctionName: "static TestEnum.function",
+            hookedFunctionName: "static TestEnum.function_hooked"
+        )
+        
+        assert(
+            function: { type.property },
+            originalFunctionName: "static TestEnum.property",
+            hookedFunctionName: "static TestEnum.property_hooked"
+        )
+        
+        assert(
+            function: { type[0] },
+            originalFunctionName: "static TestEnum.subscript",
+            hookedFunctionName: "static TestEnum.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { type.genericFunction(0) },
+            originalFunctionName: "static TestEnum.genericFunction",
+            hookedFunctionName: "static TestEnum.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! type.throwsFunction() },
+            originalFunctionName: "static TestEnum.throwsFunction",
+            hookedFunctionName: "static TestEnum.throwsFunction_hooked"
+        )
+        
+        assert(
+            function: instance.function,
+            originalFunctionName: "TestEnum.function",
+            hookedFunctionName: "TestEnum.function_hooked"
+        )
+        
+        assert(
+            function: { instance.property },
+            originalFunctionName: "TestEnum.property",
+            hookedFunctionName: "TestEnum.property_hooked"
+        )
+        
+        assert(
+            function: { instance[0] },
+            originalFunctionName: "TestEnum.subscript",
+            hookedFunctionName: "TestEnum.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { instance.genericFunction(0) },
+            originalFunctionName: "TestEnum.genericFunction",
+            hookedFunctionName: "TestEnum.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! instance.throwsFunction() },
+            originalFunctionName: "TestEnum.throwsFunction",
+            hookedFunctionName: "TestEnum.throwsFunction_hooked"
+        )
     }
 
-    func testStructStaticMethod() {
-        XCTAssertEqual(CatS.bark(), "nyan")
-        let injector = try! SwiftFunctionInjector("static CatS.bark")
-        try! injector.inject("static CatS._bark")
-        XCTAssertEqual(CatS.bark(), "bowwow")
+    func testClassFunc() {
+        let instance = TestClass.instance
+        let type = TestClass.self
+
+        assert(
+            function: type.function,
+            originalFunctionName: "static TestClass.function",
+            hookedFunctionName: "static TestClass.function_hooked"
+        )
+        
+        assert(
+            function: { type.property },
+            originalFunctionName: "static TestClass.property",
+            hookedFunctionName: "static TestClass.property_hooked"
+        )
+        
+        assert(
+            function: { type[0] },
+            originalFunctionName: "static TestClass.subscript",
+            hookedFunctionName: "static TestClass.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { type.genericFunction(0) },
+            originalFunctionName: "static TestClass.genericFunction",
+            hookedFunctionName: "static TestClass.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! type.throwsFunction() },
+            originalFunctionName: "static TestClass.throwsFunction",
+            hookedFunctionName: "static TestClass.throwsFunction_hooked"
+        )
+        
+        assert(
+            function: instance.function,
+            originalFunctionName: "TestClass.function",
+            hookedFunctionName: "TestClass.function_hooked"
+        )
+        
+        assert(
+            function: { instance.property },
+            originalFunctionName: "TestClass.property",
+            hookedFunctionName: "TestClass.property_hooked"
+        )
+        
+        assert(
+            function: { instance[0] },
+            originalFunctionName: "TestClass.subscript",
+            hookedFunctionName: "TestClass.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { instance.genericFunction(0) },
+            originalFunctionName: "TestClass.genericFunction",
+            hookedFunctionName: "TestClass.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! instance.throwsFunction() },
+            originalFunctionName: "TestClass.throwsFunction",
+            hookedFunctionName: "TestClass.throwsFunction_hooked"
+        )
+    }
+    
+    func testSubclassFunc() {
+        let instance = TestSubclass.subclassInstance
+        let type = TestSubclass.self
+
+        assert(
+            function: type.function,
+            originalFunctionName: "static TestSubclass.function",
+            hookedFunctionName: "static TestSubclass.function_hooked"
+        )
+        
+        assert(
+            function: { type.property },
+            originalFunctionName: "static TestSubclass.property",
+            hookedFunctionName: "static TestSubclass.property_hooked"
+        )
+        
+        assert(
+            function: { type[0] },
+            originalFunctionName: "static TestSubclass.subscript",
+            hookedFunctionName: "static TestSubclass.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { type.genericFunction(0) },
+            originalFunctionName: "static TestSubclass.genericFunction",
+            hookedFunctionName: "static TestSubclass.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! type.throwsFunction() },
+            originalFunctionName: "static TestSubclass.throwsFunction",
+            hookedFunctionName: "static TestSubclass.throwsFunction_hooked"
+        )
+        
+        assert(
+            function: instance.function,
+            originalFunctionName: "TestSubclass.function",
+            hookedFunctionName: "TestSubclass.function_hooked"
+        )
+        
+        assert(
+            function: { instance.property },
+            originalFunctionName: "TestSubclass.property",
+            hookedFunctionName: "TestSubclass.property_hooked"
+        )
+        
+        assert(
+            function: { instance[0] },
+            originalFunctionName: "TestSubclass.subscript",
+            hookedFunctionName: "TestSubclass.subscript",
+            hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+        )
+        
+        assert(
+            function: { instance.genericFunction(0) },
+            originalFunctionName: "TestSubclass.genericFunction",
+            hookedFunctionName: "TestSubclass.genericFunction_hooked"
+        )
+        
+        assert(
+            function: { try! instance.throwsFunction() },
+            originalFunctionName: "TestSubclass.throwsFunction",
+            hookedFunctionName: "TestSubclass.throwsFunction_hooked"
+        )
     }
 
-    func testEnumInstanceMethod() {
-        let cat = CatE.tama
-        XCTAssertEqual(cat.bark(), "nyan")
-        let injector = try! SwiftFunctionInjector("CatE.bark")
-        try! injector.inject("CatE._bark")
-        XCTAssertEqual(cat.bark(), "bowwow")
-    }
+    func testExistentialFunc() {
+         let instance = TestExistentialImpl.instance
+         let type = TestExistentialImpl.self
 
-    func testEnumStaticMethod() {
-       XCTAssertEqual(CatE.bark(), "nyan")
-       let injector = try! SwiftFunctionInjector("static CatE.bark")
-       try! injector.inject("static CatE._bark")
-       XCTAssertEqual(CatE.bark(), "bowwow")
-    }
-    
-    func testStruct1AargumentMethod() {
-        let cat = CatS()
-        XCTAssertEqual(cat.eat(0), true)
-        let injector = try! SwiftFunctionInjector("CatS.eat")
-        try! injector.inject("CatS._eat")
-        XCTAssertEqual(cat.eat(0), false)
-    }
-    
-    func testStructGenericsMethod() {
-        let cat = CatS()
-        XCTAssertEqual(cat.eatCollection([1, 2, 3]), true)
-        let injector = try! SwiftFunctionInjector("CatS.eatCollection")
-        try! injector.inject("CatS._eatCollection")
-        XCTAssertEqual(cat.eatCollection([1, 2, 3]), false)
-    }
-    
-    func testGenericsStructMethod() {
-        let animal = Animal<Int>()
-        XCTAssertEqual(animal.eat(0), true)
-        let injector = try! SwiftFunctionInjector("Animal.eat")
-        try! injector.inject("Animal._eat")
-        XCTAssertEqual(animal.eat(0), false)
-    }
-    
-    func testStructVariableArgsMethod() {
-        let cat = CatS()
-        XCTAssertEqual(cat.eatVariable(1, 2, 3), true)
-        let injector = try! SwiftFunctionInjector("CatS.eatVariable")
-        try! injector.inject("CatS._eatVariable")
-        XCTAssertEqual(cat.eatVariable(1, 2, 3), false)
-    }
-    
-    func testInstanceComputedProperty() {
-        let cat = CatS()
-        XCTAssertEqual(cat.name, "tama")
-        let injector = try! SwiftFunctionInjector("CatS.name")
-        try! injector.inject("CatS._name")
-        XCTAssertEqual(cat.name, "mike")
-    }
-    
-    func testStaticComputedProperty() {
-        XCTAssertEqual(CatS.name, "tama")
-        let injector = try! SwiftFunctionInjector("static CatS.name")
-        try! injector.inject("static CatS._name")
-        XCTAssertEqual(CatS.name, "mike")
-    }
-    
-    func testKanaFunction() {
-        let cat = CatS()
-        XCTAssertEqual(cat.和名(), "たま")
-        let injector = try! SwiftFunctionInjector("CatS.和名")
-        try! injector.inject("CatS._和名")
-        XCTAssertEqual(cat.和名(), "みけ")
-    }
-    
-    func testClassInstanceMethod() {
-        let cat = CatC()
-        XCTAssertEqual(cat.bark(), "nyan")
-        let injector = try! SwiftFunctionInjector("CatC.bark")
-        try! injector.inject("CatC._bark")
-        XCTAssertEqual(cat.bark(), "bowwow")
-    }
-    
-    func testSubclassInstanceMethod() {
-        let cat: CatC = CatCSubclass()
-        XCTAssertEqual(cat.bark(), "nyan2")
-        let injector = try! SwiftFunctionInjector("CatCSubclass.bark")
-        try! injector.inject("CatCSubclass._bark2")
-        XCTAssertEqual(cat.bark(), "bowwow2")
-    }
-    
-    func testExistentialInstanceMethod() {
-        let cat = CatPInstance()
-        XCTAssertEqual(cat.bark(), "nyan")
-        let injector = try! SwiftFunctionInjector("CatP.bark")
-        try! injector.inject("CatP._bark")
-        XCTAssertEqual(cat.bark(), "bowwow")
-    }
-    
-    func testThrowsMethod() {
-        let cat = CatS()
-        XCTAssertNoThrow(try cat.stand())
-        let injector = try! SwiftFunctionInjector("CatS.stand")
-        try! injector.inject("CatS._stand")
-        XCTAssertThrowsError(try cat.stand())
-    }
-    
-    func testSubscript() {
-        let cat = CatS()
-        XCTAssertEqual(cat[1], 1)
-        let injector = try! SwiftFunctionInjector("CatS.subscript")
-        try! injector.inject("CatS.subscript", selectFunction: { functions in
-            return functions.first(where: { $0.funcName.contains("hooked:") })
-        })
-        XCTAssertEqual(cat[1], 2)
-    }
+         assert(
+             function: type.function,
+             originalFunctionName: "static TestExistential.function",
+             hookedFunctionName: "static TestExistential.function_hooked"
+         )
+         
+         assert(
+             function: { type.property },
+             originalFunctionName: "static TestExistential.property",
+             hookedFunctionName: "static TestExistential.property_hooked"
+         )
+         
+         assert(
+             function: { type[0] },
+             originalFunctionName: "static TestExistential.subscript",
+             hookedFunctionName: "static TestExistential.subscript",
+             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+         )
+         
+         assert(
+             function: { type.genericFunction(0) },
+             originalFunctionName: "static TestExistential.genericFunction",
+             hookedFunctionName: "static TestExistential.genericFunction_hooked"
+         )
+         
+         assert(
+             function: { try! type.throwsFunction() },
+             originalFunctionName: "static TestExistential.throwsFunction",
+             hookedFunctionName: "static TestExistential.throwsFunction_hooked"
+         )
+         
+         assert(
+             function: instance.function,
+             originalFunctionName: "TestExistential.function",
+             hookedFunctionName: "TestExistential.function_hooked"
+         )
+         
+         assert(
+             function: { instance.property },
+             originalFunctionName: "TestExistential.property",
+             hookedFunctionName: "TestExistential.property_hooked"
+         )
+         
+         assert(
+             function: { instance[0] },
+             originalFunctionName: "TestExistential.subscript",
+             hookedFunctionName: "TestExistential.subscript",
+             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
+         )
+         
+         assert(
+             function: { instance.genericFunction(0) },
+             originalFunctionName: "TestExistential.genericFunction",
+             hookedFunctionName: "TestExistential.genericFunction_hooked"
+         )
+         
+         assert(
+             function: { try! instance.throwsFunction() },
+             originalFunctionName: "TestExistential.throwsFunction",
+             hookedFunctionName: "TestExistential.throwsFunction_hooked"
+         )
+     }
+
 
     static var allTests = [
-        ("testTopLevelFunction", testTopLevelFunction),
-        ("testStructInstanceMethod", testStructInstanceMethod),
-        ("testStructStaticMethod", testStructStaticMethod),
-        ("testEnumInstanceMethod", testEnumInstanceMethod),
-        ("testEnumStaticMethod", testEnumStaticMethod),
-        ("testStruct1AargumentMethod", testStruct1AargumentMethod),
-        ("testStructGenericsMethod", testStructGenericsMethod),
-        ("testGenericsStructMethod", testGenericsStructMethod),
-        ("testStructVariableArgsMethod", testStructVariableArgsMethod),
-        ("testInstanceComputedProperty", testInstanceComputedProperty),
-        ("testKanaFunction", testKanaFunction),
-        ("testClassInstanceMethod", testClassInstanceMethod),
-        ("testSubclassInstanceMethod", testSubclassInstanceMethod),
-        ("testExistentialInstanceMethod", testExistentialInstanceMethod)
+        ("testGlobalFunc", testGlobalFunc)
     ]
 }

@@ -7,162 +7,456 @@
 
 import Foundation
 
-func catBark() -> String {
-    return "nyan"
+func globalFunction() -> Int {
+    return 1
 }
 
-func dogBark() -> String {
-    return "bowwow"
+func globalFunction_hooked() -> Int {
+    return 0
 }
 
-struct CatS {
-    static func bark() -> String {
-        return "nyan"
-    }
-
-    static func _bark() -> String {
-        return "bowwow"
-    }
-
-    func bark() -> String {
-        return "nyan"
-    }
-
-    func _bark() -> String {
-        return "bowwow"
-    }
+protocol TestAsset {
+    static func function() -> Int
+    static func function_hooked() -> Int
+    static var property: Int { get }
+    static var property_hooked: Int { get }
+    static subscript(_ i: Int) -> Int { get }
+    static subscript(hooked i: Int) -> Int { get }
+    static func genericFunction<T>(_ arg: T) -> Int
+    static func genericFunction_hooked<T>(_ arg: T) -> Int
+    static func throwsFunction() throws -> Int
+    static func throwsFunction_hooked() throws -> Int
+    
+    func function() -> Int
+    func function_hooked() -> Int
+    var property: Int { get }
+    var property_hooked: Int { get }
+    subscript(_ i: Int) -> Int { get }
+    subscript(hooked i: Int) -> Int { get }
+    func genericFunction<T>(_ arg: T) -> Int
+    func genericFunction_hooked<T>(_ arg: T) -> Int
+    func throwsFunction() throws -> Int
+    func throwsFunction_hooked() throws -> Int
 }
 
-enum CatE {
-    case tama
-    static func bark() -> String {
-        return "nyan"
-    }
-
-    static func _bark() -> String {
-        return "bowwow"
-    }
-
-    func bark() -> String {
-        return "nyan"
-    }
-
-    func _bark() -> String {
-        return "bowwow"
-    }
-}
-
-extension CatS {
-    var name: String {
-        return "tama"
+struct TestStruct: TestAsset {
+    static var instance = TestStruct()
+    static func function() -> Int {
+        return 1
     }
     
-    var _name: String {
-        return "mike"
+    static func function_hooked() -> Int {
+        return 0
     }
     
-    static var name: String {
-        return "tama"
+    static var property: Int {
+        return 1
     }
     
-    static var _name: String {
-        return "mike"
+    static var property_hooked: Int {
+        return 0
     }
     
-    func eat(_ food: Any) -> Bool {
-        return true
+    static subscript(i: Int) -> Int {
+        return 1
     }
     
-    func _eat(_ food: Any) -> Bool {
-        return false
+    static subscript(hooked i: Int) -> Int {
+        return 0
     }
     
-    func eatCollection<T: Collection>(_ foods: T) -> Bool {
-        return !foods.isEmpty
+    static func genericFunction<T>(_ arg: T) -> Int {
+        return 1
     }
     
-    func _eatCollection<T: Collection>(_ foods: T) -> Bool {
-        return foods.isEmpty
-    }
-
-    func eatVariable(_ foods: Any ...) -> Bool {
-        return !foods.isEmpty
+    static func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
     }
     
-    func _eatVariable(_ foods: Any ...) -> Bool {
-        return foods.isEmpty
+    static func throwsFunction() throws -> Int {
+        return 1
     }
     
-    func 和名() -> String {
-        return "たま"
-    }
-
-    func _和名() -> String {
-        return "みけ"
+    static func throwsFunction_hooked() throws -> Int {
+        return 0
     }
     
-    func stand() throws {
-        
+    func function() -> Int {
+        return 1
     }
     
-    func _stand() throws {
-        struct _Error: Error {}
-        throw _Error()
+    func function_hooked() -> Int {
+        return 0
     }
     
-    subscript(_ i: Int) -> Int {
-        return i
+    var property: Int {
+        return 1
+    }
+    
+    var property_hooked: Int {
+        return 0
+    }
+    
+    subscript(i: Int) -> Int {
+        return 1
     }
     
     subscript(hooked i: Int) -> Int {
-        return i + 1
-    }
-}
-
-struct Animal<Food> {
-    func eat(_ food: Food) -> Bool {
-        return true
+        return 0
     }
     
-    func _eat(_ food: Food) -> Bool {
-        return false
+    func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    func throwsFunction_hooked() throws -> Int {
+        return 0
     }
 }
 
-class CatC {
-    func bark() -> String {
-        return "nyan"
+enum TestEnum: TestAsset {
+    case instance
+    static func function() -> Int {
+        return 1
     }
-
-    func _bark() -> String {
-        return "bowwow"
+    
+    static func function_hooked() -> Int {
+        return 0
+    }
+    
+    static var property: Int {
+        return 1
+    }
+    
+    static var property_hooked: Int {
+        return 0
+    }
+    
+    static subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    static subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    static func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    static func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    static func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    static func throwsFunction_hooked() throws -> Int {
+        return 0
+    }
+    
+    func function() -> Int {
+        return 1
+    }
+    
+    func function_hooked() -> Int {
+        return 0
+    }
+    
+    var property: Int {
+        return 1
+    }
+    
+    var property_hooked: Int {
+        return 0
+    }
+    
+    subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    func throwsFunction_hooked() throws -> Int {
+        return 0
     }
 }
 
-class CatCSubclass: CatC {
-    override func bark() -> String {
-        return "nyan2"
+class TestClass: TestAsset {
+    static var instance = TestClass()
+    class func function() -> Int {
+        return 1
     }
-
-    func _bark2() -> String {
-        return "bowwow2"
+    
+    class func function_hooked() -> Int {
+        return 0
+    }
+    
+    class var property: Int {
+        return 1
+    }
+    
+    class var property_hooked: Int {
+        return 0
+    }
+    
+    class subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    class subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    class func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    class func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    class func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    class func throwsFunction_hooked() throws -> Int {
+        return 0
+    }
+    
+    func function() -> Int {
+        return 1
+    }
+    
+    func function_hooked() -> Int {
+        return 0
+    }
+    
+    var property: Int {
+        return 1
+    }
+    
+    var property_hooked: Int {
+        return 0
+    }
+    
+    subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    func throwsFunction_hooked() throws -> Int {
+        return 0
     }
 }
 
-protocol CatP {
+class TestSubclass: TestClass {
+    static var subclassInstance: TestClass = TestSubclass()
+    override class func function() -> Int {
+        return 1
+    }
+    
+    override class func function_hooked() -> Int {
+        return 0
+    }
+    
+    override class var property: Int {
+        return 1
+    }
+    
+    override class var property_hooked: Int {
+        return 0
+    }
+    
+    override class subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    override class subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    override class func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    override class func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    override class func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    override class func throwsFunction_hooked() throws -> Int {
+        return 0
+    }
+    
+    override func function() -> Int {
+        return 1
+    }
+    
+    override func function_hooked() -> Int {
+        return 0
+    }
+    
+    override var property: Int {
+        return 1
+    }
+    
+    override var property_hooked: Int {
+        return 0
+    }
+    
+    override subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    override subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    override func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    override func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    override func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    override func throwsFunction_hooked() throws -> Int {
+        return 0
+    }
+}
+
+protocol TestExistential: TestAsset {
     
 }
 
-extension CatP {
-    func bark() -> String {
-        return "nyan"
+extension TestExistential {
+    static func function() -> Int {
+        return 1
     }
-
-    func _bark() -> String {
-        return "bowwow"
+    
+    static func function_hooked() -> Int {
+        return 0
+    }
+    
+    static var property: Int {
+        return 1
+    }
+    
+    static var property_hooked: Int {
+        return 0
+    }
+    
+    static subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    static subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    static func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    static func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    static func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    static func throwsFunction_hooked() throws -> Int {
+        return 0
+    }
+    
+    func function() -> Int {
+        return 1
+    }
+    
+    func function_hooked() -> Int {
+        return 0
+    }
+    
+    var property: Int {
+        return 1
+    }
+    
+    var property_hooked: Int {
+        return 0
+    }
+    
+    subscript(i: Int) -> Int {
+        return 1
+    }
+    
+    subscript(hooked i: Int) -> Int {
+        return 0
+    }
+    
+    func genericFunction<T>(_ arg: T) -> Int {
+        return 1
+    }
+    
+    func genericFunction_hooked<T>(_ arg: T) -> Int {
+        return 0
+    }
+    
+    func throwsFunction() throws -> Int {
+        return 1
+    }
+    
+    func throwsFunction_hooked() throws -> Int {
+        return 0
     }
 }
 
-struct CatPInstance: CatP {
-    
+struct TestExistentialImpl: TestExistential {
+    static var instance = TestExistentialImpl()
 }
