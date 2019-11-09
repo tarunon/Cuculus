@@ -50,11 +50,14 @@ struct SwiftMangleTable {
     static var instance = SwiftMangleTable()
     
     static func match(funcName: String, candidate: String) -> Bool {
-        if funcName.hasPrefix("static ") {
-            let funcName = funcName.replacingOccurrences(of: "static ", with: "")
-            return candidate.contains("static ") && (candidate.contains(funcName + " ") || candidate.contains(funcName + "(") || candidate.contains(funcName + "<") || candidate.contains(funcName + "."))
-        }
-        return candidate.contains(funcName + " ") || candidate.contains(funcName + "(") || candidate.contains(funcName + "<") || candidate.contains(funcName + ".")
+        let escapedFuncName = funcName.replacingOccurrences(of: "static ", with: "")
+        return (!funcName.hasPrefix("static ") || candidate.hasPrefix("static ")) &&
+            (
+                candidate.contains(escapedFuncName + " ") ||
+                candidate.contains(escapedFuncName + "(") ||
+                candidate.contains(escapedFuncName + "<") ||
+                candidate.contains(escapedFuncName + ".")
+            )
     }
     
     func match(_ funcName: String, select: ([String]) -> String?) -> Pair? {
@@ -78,7 +81,9 @@ struct SymbolNameList: Sequence {
 
 struct SymbolNameIterator: IteratorProtocol {
     typealias Element = String
-    struct Cmds {
+    struct SymbolTable: IteratorProtocol {
+        typealias Element = String
+        
         static let linkeditName = SEG_LINKEDIT.data(using: String.Encoding.utf8)!.map({ $0 })
         let header: UnsafePointer<mach_header>
         let slide: Int
@@ -88,23 +93,34 @@ struct SymbolNameIterator: IteratorProtocol {
         var curCmd: UnsafeMutablePointer<segment_command_64> {
             didSet {
                 if curCmd.pointee.cmd == LC_SEGMENT_64 {
-                    if UInt8(curCmd.pointee.segname.0) == Cmds.linkeditName[0] &&
-                       UInt8(curCmd.pointee.segname.1) == Cmds.linkeditName[1] &&
-                       UInt8(curCmd.pointee.segname.2) == Cmds.linkeditName[2] &&
-                       UInt8(curCmd.pointee.segname.3) == Cmds.linkeditName[3] &&
-                       UInt8(curCmd.pointee.segname.4) == Cmds.linkeditName[4] &&
-                       UInt8(curCmd.pointee.segname.5) == Cmds.linkeditName[5] &&
-                       UInt8(curCmd.pointee.segname.6) == Cmds.linkeditName[6] &&
-                       UInt8(curCmd.pointee.segname.7) == Cmds.linkeditName[7] &&
-                       UInt8(curCmd.pointee.segname.8) == Cmds.linkeditName[8] &&
-                       UInt8(curCmd.pointee.segname.9) == Cmds.linkeditName[9] {
+                    if UInt8(curCmd.pointee.segname.0) == SymbolTable.linkeditName[0] &&
+                       UInt8(curCmd.pointee.segname.1) == SymbolTable.linkeditName[1] &&
+                       UInt8(curCmd.pointee.segname.2) == SymbolTable.linkeditName[2] &&
+                       UInt8(curCmd.pointee.segname.3) == SymbolTable.linkeditName[3] &&
+                       UInt8(curCmd.pointee.segname.4) == SymbolTable.linkeditName[4] &&
+                       UInt8(curCmd.pointee.segname.5) == SymbolTable.linkeditName[5] &&
+                       UInt8(curCmd.pointee.segname.6) == SymbolTable.linkeditName[6] &&
+                       UInt8(curCmd.pointee.segname.7) == SymbolTable.linkeditName[7] &&
+                       UInt8(curCmd.pointee.segname.8) == SymbolTable.linkeditName[8] &&
+                       UInt8(curCmd.pointee.segname.9) == SymbolTable.linkeditName[9] {
                         linkeditCmd = curCmd
                     }
                 } else if curCmd.pointee.cmd == LC_SYMTAB {
-                    symtabCmd = UnsafeMutablePointer<symtab_command>(OpaquePointer(curCmd))
+                    symtabCmd = UnsafeMutableRawPointer(curCmd).assumingMemoryBound(to: symtab_command.self)
                 }
             }
         }
+        
+        var linkedBase: Int!
+        var symbolTable: UnsafeMutablePointer<nlist_64> {
+            return UnsafeMutablePointer(bitPattern: linkedBase + Int(symtabCmd.pointee.symoff))!
+        }
+        var strTable: UnsafeMutablePointer<UInt8> {
+            return UnsafeMutablePointer(bitPattern: linkedBase + Int(symtabCmd.pointee.stroff))!
+        }
+        
+        var symbolCount: UInt32!
+        var symbolIndex: UInt32!
 
         init?(imageIndex: UInt32) {
             guard let header = _dyld_get_image_header(imageIndex) else {
@@ -112,7 +128,9 @@ struct SymbolNameIterator: IteratorProtocol {
             }
             self.header = header
             self.slide = _dyld_get_image_vmaddr_slide(imageIndex)
-            self.curCmd = UnsafeMutablePointer<segment_command_64>(bitPattern: UInt(bitPattern: header) + UInt(MemoryLayout<mach_header_64>.size))!
+            self.curCmd = UnsafeMutablePointer(mutating: UnsafeRawPointer(header).advanced(by: MemoryLayout<mach_header_64>.size).assumingMemoryBound(to: segment_command_64.self))
+            
+            self.reduce()
         }
         
         mutating func curNext() {
@@ -121,57 +139,51 @@ struct SymbolNameIterator: IteratorProtocol {
         
         mutating func reduce() {
             (0..<header.pointee.ncmds).map { _ in }.forEach { self.curNext() }
+            linkedBase = slide + Int(linkeditCmd.pointee.vmaddr) - Int(linkeditCmd.pointee.fileoff)
+            if linkeditCmd == nil || symtabCmd == nil {
+                symbolCount = 0
+                return
+            }
+            symbolCount = symtabCmd.pointee.nsyms
+            symbolIndex = 0
+        }
+        
+        mutating func next() -> String? {
+            if symbolCount <= symbolIndex {
+                return nil
+            }
+            defer {
+                symbolIndex += 1
+            }
+            return String(cString: strTable.advanced(by: Int(symbolTable.advanced(by: Int(symbolIndex)).pointee.n_un.n_strx)))
         }
     }
     let imageCount = _dyld_image_count()
     var imageIndex: UInt32! {
         didSet {
-            guard var cmds = Cmds(imageIndex: self.imageIndex) else {
-                symbolCount = 0
-                return
-            }
-            cmds.reduce()
-            if cmds.linkeditCmd == nil || cmds.symtabCmd == nil {
-                symbolCount = 0
-                return
-            }
-            let linkedBase = cmds.slide + Int(cmds.linkeditCmd.pointee.vmaddr) - Int(cmds.linkeditCmd.pointee.fileoff)
-            symbolTable = UnsafeMutablePointer<nlist_64>(bitPattern: linkedBase + Int(cmds.symtabCmd.pointee.symoff))!
-            strTable = UnsafeMutablePointer<UInt8>(bitPattern: linkedBase + Int(cmds.symtabCmd.pointee.stroff))!
-            symbolCount = cmds.symtabCmd.pointee.nsyms
-            symbolIndex = 0
-        }
-    }
-    
-    var symbolCount: UInt32
-    var symbolIndex: UInt32 {
-        didSet {
-            if symbolCount <= symbolIndex {
-                imageIndex += 1
+            self.symbolTable = SymbolTable(imageIndex: self.imageIndex)
+            if symbolTable == nil {
+                self.imageIndex += 1
             }
         }
     }
     
-    var symbolTable: UnsafeMutablePointer<nlist_64>!
-    var strTable: UnsafeMutablePointer<UInt8>!
-    
-    var symtable: nlist_64!
+    var symbolTable: SymbolTable!
     
     init() {
-        symbolCount = 0
-        symbolIndex = 0
         defer {
             imageIndex = 0
         }
     }
     
     mutating func next() -> String? {
-        if imageIndex == imageCount {
-            return nil
+        while imageIndex < imageCount {
+            if let result = symbolTable.next() {
+                return result
+            } else {
+                imageIndex += 1
+            }
         }
-        defer {
-            symbolIndex += 1
-        }
-        return String(cString: strTable.advanced(by: Int(symbolTable.advanced(by: Int(symbolIndex)).pointee.n_un.n_strx)))
+        return nil
     }
 }
