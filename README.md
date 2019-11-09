@@ -7,7 +7,7 @@ A library for Swift Function Hooking.
 let cat = Cat()
 XCTAssertEqual(cat.bark(), "nyan")
 let injector = try! SwiftFunctionInjector("Cat.bark")
-try! injector.inject("Cat._bark")
+injector.inject("Cat._bark")
 XCTAssertEqual(cat.bark(), "bowwow")
 ```
 
