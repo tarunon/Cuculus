@@ -9,31 +9,37 @@ import Foundation
 
 /// Management class for Swift Function Inject.
 /// When release this object, the method work as original.
-public class SwiftFunctionInjector<T> {
+public class SwiftFunctionInjector {
     var internalInjector: CFunctionInjector
+    var console: Bool
+        
+    public static func selectFunction(_ functions: [SwiftFunction]) -> SwiftFunction? {
+        return functions.sorted(by: { $0.symbol.name.count < $1.symbol.name.count }).first(where: { _ in true })
+    }
 
     /// Create FunctionInjector for change origin method behavior.
     /// - Parameter target: The target method. Support struct/enum or top level function.
-    public init(_ target: T) throws {
-        guard SwiftFunctionInjector.isFunctionType(type: T.self) else {
-            throw CFunctionInjector.Error(message: "Argument is not function. \(T.self)")
+    public init(_ targetFuncName: String, selectFunction: ([SwiftFunction]) -> SwiftFunction? = selectFunction(_:), console: Bool = false) throws {
+        self.console = console
+        guard let function = SwiftFunctionTable.instance.match(targetFuncName, select: selectFunction) else {
+            throw CFunctionInjector.Error(message: "function name \(targetFuncName) is not found on mangle table")
         }
-        internalInjector = try CFunctionInjector(unsafeBitCast(target, to: SwiftFuncWrapper.self).instructionPtr())
-    }
-
-    static func isFunctionType<T>(type: T.Type) -> Bool {
-        // Check metadata kind value which is located at the head of metadata.
-        // Function type kind is defined as 2
-        // Reference: https://github.com/apple/swift/blob/master/include/swift/ABI/MetadataKind.def
-        let typeKind = unsafeBitCast(type, to: UnsafePointer<UInt8>.self)
-        let funcKind = 2
-        return typeKind.pointee == funcKind
+        if console {
+            print("Function selected: \(function)")
+        }
+        internalInjector = try CFunctionInjector(function.symbol.address)
     }
 
     /// Change target method behavior as destination method.
     /// - Parameter destination: The destination method. Should be same type as target.
-    public func inject(_ destination: T) {
-        internalInjector.inject(unsafeBitCast(destination, to: SwiftFuncWrapper.self).instructionPtr())
+    public func inject(_ destinationFuncName: String, selectFunction: ([SwiftFunction]) -> SwiftFunction? = selectFunction(_:)) throws {
+        guard let function = SwiftFunctionTable.instance.match(destinationFuncName, select: selectFunction) else {
+            throw CFunctionInjector.Error(message: "function name \(destinationFuncName) is not found on mangle table")
+        }
+        if console {
+            print("Function selected: \(function)")
+        }
+        internalInjector.inject(function.symbol.address)
     }
     
     /// Change origin method behavior as original.
