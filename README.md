@@ -24,10 +24,9 @@ XCTAssertEqual(cat.bark(), "bowwow")
 | instance stored property | - | ※1 | ○ | - |
 | instance subscript | - | ○ | ○ | ○ |
 | inlinable func | × | × | × | × | 
-| framework func | ※2 | ※2 | ※2 | ※2 |
+| framework func | ○ | ○ | ○ | ○ |
 
 ※1 It's possible to hook if access from existential.
-※2 Isn't work swift 4.2 compiler.
 
 
 | environment | |

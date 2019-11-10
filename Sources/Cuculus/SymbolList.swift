@@ -2,7 +2,7 @@
 //  SymbolTable.swift
 //  Cuculus
 //
-//  Created by 齋藤暢郎 on 2019/11/10.
+//  Created by tarunon on 2019/11/10.
 //
 
 import Foundation
@@ -57,7 +57,6 @@ struct SymbolList: Sequence {
 
             var linkeditCmd: UnsafeMutablePointer<segment_command_64>!
             var symtabCmd: UnsafeMutablePointer<symtab_command>!
-            var dyldInfo: UnsafeMutablePointer<dyld_info_command>!
 
             var linkeditBase: Int!
             var symbolTable: UnsafeMutablePointer<nlist_64> {
@@ -93,8 +92,6 @@ struct SymbolList: Sequence {
                         }
                     } else if cmd.pointee.cmd == LC_SYMTAB {
                         symtabCmd = UnsafeMutableRawPointer(cmd).assumingMemoryBound(to: symtab_command.self)
-                    } else if cmd.pointee.cmd == LC_DYLD_INFO {
-                        dyldInfo = UnsafeMutableRawPointer(cmd).assumingMemoryBound(to: dyld_info_command.self)
                     }
                 }
 
@@ -120,7 +117,7 @@ struct SymbolList: Sequence {
                         name: String(cString: strTable.advanced(by: Int(nlist.n_un.n_strx))),
                         address: UnsafeMutableRawPointer(bitPattern: Int(linkeditBase) + Int(nlist.n_value))!
                     )
-                    if symbol.name.hasPrefix("_$s") {
+                    if symbol.name.hasPrefix("_$s") || symbol.name.hasPrefix("_$S") {
                         if nlist.n_type == 15 { // Note: if n_type is 15, require to set offset in address
                             symbol.address = dlsym(RTLD_DEFAULT, String(symbol.name.dropFirst()))
                         }

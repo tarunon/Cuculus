@@ -445,7 +445,6 @@ final class CuculusTests: XCTestCase {
         )
     }
 
-    #if compiler(>=5.0)
     func testStandardLibsFunction() {
         let str = "a"
         assert(
@@ -455,9 +454,7 @@ final class CuculusTests: XCTestCase {
             debug: true
         )
     }
-    #endif
 
-    #if compiler(>=5.0)
     static var allTests = [
         ("testGlobalFunc", testGlobalFunc),
         ("testStructFunc", testStructFunc),
@@ -468,15 +465,4 @@ final class CuculusTests: XCTestCase {
         ("testGenericStructFunc", testGenericStructFunc),
         ("testStandardLibsFunction", testStandardLibsFunction)
     ]
-    #else
-    static var allTests = [
-        ("testGlobalFunc", testGlobalFunc),
-        ("testStructFunc", testStructFunc),
-        ("testEnumFunc", testEnumFunc),
-        ("testClassFunc", testClassFunc),
-        ("testSubclassFunc", testSubclassFunc),
-        ("testExistentialFunc", testExistentialFunc),
-        ("testGenericStructFunc", testGenericStructFunc),
-    ]
-    #endif
 }
