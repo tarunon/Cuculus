@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MachO
 
 // dlfcn.h
 // #define    RTLD_DEFAULT    ((void *) -2)    /* Use default search algorithm. */
