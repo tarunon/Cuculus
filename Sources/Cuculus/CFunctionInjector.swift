@@ -6,10 +6,6 @@
 
 import Foundation
 
-// dlfcn.h
-// #define    RTLD_DEFAULT    ((void *) -2)    /* Use default search algorithm. */
-let RTLD_DEFAULT = UnsafeMutableRawPointer(bitPattern: -2)
-
 class CFunctionInjector {
     struct Error : LocalizedError, CustomStringConvertible {
         var message: String

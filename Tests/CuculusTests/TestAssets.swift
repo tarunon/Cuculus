@@ -15,6 +15,12 @@ func globalFunction_hooked() -> Int {
     return 0
 }
 
+extension String {
+    var count_hooked: Int {
+        return 0
+    }
+}
+
 protocol TestAsset {
     static func function() -> Int
     static func function_hooked() -> Int
@@ -61,11 +67,21 @@ struct TestStruct: TestAsset {
 
     #if compiler(>=5.0)
     static subscript(i: Int) -> Int {
-        return 1
+        get {
+            return 1
+        }
+        set {
+
+        }
     }
 
     static subscript(hooked i: Int) -> Int {
-        return 0
+        get {
+            return 0
+        }
+        set {
+            
+        }
     }
     #endif
 

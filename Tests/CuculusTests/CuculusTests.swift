@@ -50,8 +50,8 @@ final class CuculusTests: XCTestCase {
         #if compiler(>=5.0)
         assert(
             function: { type[0] },
-            originalFunctionName: "static TestStruct.subscript",
-            hookedFunctionName: "static TestStruct.subscript",
+            originalFunctionName: "static TestStruct.subscript.getter",
+            hookedFunctionName: "static TestStruct.subscript.getter",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
         #endif
@@ -82,8 +82,8 @@ final class CuculusTests: XCTestCase {
 
         assert(
             function: { instance[0] },
-            originalFunctionName: "TestStruct.subscript",
-            hookedFunctionName: "TestStruct.subscript",
+            originalFunctionName: "TestStruct.subscript.getter",
+            hookedFunctionName: "TestStruct.subscript.getter",
             hookedFunctionSelect: { $0.first(where: { $0.funcName.contains("hooked:") }) }
         )
 
@@ -308,7 +308,7 @@ final class CuculusTests: XCTestCase {
     }
 
     func testExistentialFunc() {
-        let instance = TestExistentialImpl.instance
+        let instance: TestAsset = TestExistentialImpl.instance
         let type = TestExistentialImpl.self
 
         assert(
@@ -445,6 +445,30 @@ final class CuculusTests: XCTestCase {
         )
     }
 
+    #if compiler(>=5.0)
+    func testStandardLibsFunction() {
+        let str = "a"
+        assert(
+            function: { str.count },
+            originalFunctionName: "String.count",
+            hookedFunctionName: "String.count_hooked",
+            debug: true
+        )
+    }
+    #endif
+
+    #if compiler(>=5.0)
+    static var allTests = [
+        ("testGlobalFunc", testGlobalFunc),
+        ("testStructFunc", testStructFunc),
+        ("testEnumFunc", testEnumFunc),
+        ("testClassFunc", testClassFunc),
+        ("testSubclassFunc", testSubclassFunc),
+        ("testExistentialFunc", testExistentialFunc),
+        ("testGenericStructFunc", testGenericStructFunc),
+        ("testStandardLibsFunction", testStandardLibsFunction)
+    ]
+    #else
     static var allTests = [
         ("testGlobalFunc", testGlobalFunc),
         ("testStructFunc", testStructFunc),
@@ -454,4 +478,5 @@ final class CuculusTests: XCTestCase {
         ("testExistentialFunc", testExistentialFunc),
         ("testGenericStructFunc", testGenericStructFunc),
     ]
+    #endif
 }
