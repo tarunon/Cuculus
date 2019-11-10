@@ -23,11 +23,9 @@ XCTAssertEqual(cat.bark(), "bowwow")
 | instance computed property | - | ○ | ○ | ○ |
 | instance stored property | - | ※1 | ○ | - |
 | instance subscript | - | ○ | ○ | ○ |
-| inlinable func | × | × | × | × | 
-| framework func | ○ | ○ | ○ | ○ |
 
+※ Inlinable function is possible to not work.
 ※1 It's possible to hook if access from existential.
-
 
 | environment | |
 |--|--|
