@@ -96,11 +96,11 @@ struct SymbolList: Sequence {
                     }
                 }
 
-                linkeditBase = slide + Int(linkeditCmd.pointee.vmaddr) - Int(linkeditCmd.pointee.fileoff)
                 if linkeditCmd == nil || symtabCmd == nil {
                     symbolCount = 0
                     return
                 }
+                linkeditBase = slide + Int(linkeditCmd.pointee.vmaddr) - Int(linkeditCmd.pointee.fileoff)
                 symbolCount = symtabCmd.pointee.nsyms
                 symbolIndex = 0
             }

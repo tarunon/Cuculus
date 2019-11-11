@@ -91,10 +91,10 @@ struct SwiftFunctionTable {
         return (!funcName.hasPrefix("static ") != candidate.hasPrefix("static ")) && candidate.contains(escapedFuncName)
     }
     
-    func match(_ funcName: String, select: ([SwiftFunction]) -> SwiftFunction?) -> SwiftFunction? {
+    func match(_ funcName: String) -> [SwiftFunction] {
         if let symbol = table[funcName] {
-            return SwiftFunction(funcName: funcName, symbol: symbol)
+            return [SwiftFunction(funcName: funcName, symbol: symbol)]
         }
-        return select(Array(table.filter({ SwiftFunctionTable.match(funcName: funcName, candidate: $0.key) }).map({ SwiftFunction(funcName: $0.key, symbol: $0.value) })))
+        return Array(table.filter({ SwiftFunctionTable.match(funcName: funcName, candidate: $0.key) }).map({ SwiftFunction(funcName: $0.key, symbol: $0.value) }))
     }
 }

@@ -67,21 +67,11 @@ struct TestStruct: TestAsset {
 
     #if compiler(>=5.0)
     static subscript(i: Int) -> Int {
-        get {
-            return 1
-        }
-        set {
-
-        }
+        return 1
     }
 
     static subscript(hooked i: Int) -> Int {
-        get {
-            return 0
-        }
-        set {
-            
-        }
+        return 0
     }
     #endif
 
